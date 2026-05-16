@@ -747,6 +747,54 @@ button,input{font-family:inherit;cursor:pointer}
             <span class="arl">Renew / Upgrade</span>
             <span class="arv" style="color:#6c5ce7">→ Open website</span>
           </div>
+          <div class="acct-row clickable" onclick="openResetPw()">
+            <span class="arl">Change password</span>
+            <span class="arv" style="color:#a78bfa">→ Reset</span>
+          </div>
+        </div>
+
+        <!-- RESET PASSWORD PANEL (hidden, shown inline) -->
+        <div id="resetPwPanel" style="display:none;background:#fff;border:1.5px solid #e8e9f4;border-radius:14px;padding:20px 18px;margin-top:8px">
+          <div style="font-size:13px;font-weight:700;color:#2a2b3e;margin-bottom:14px">🔐 Change Password</div>
+
+          <!-- Step A: enter email -->
+          <div id="rp-s1">
+            <label class="albl" style="font-size:11px;color:#888;font-weight:600;letter-spacing:.4px;margin-bottom:6px;display:block">YOUR EMAIL</label>
+            <input id="rpEmail" class="ainp" type="email" placeholder="you@example.com" style="margin-bottom:10px">
+            <button id="rpSendBtn" class="abtn" style="padding:10px;font-size:12px" onclick="rpSendCode()">Send Reset Code</button>
+            <div class="aerr" id="rpErr1" style="margin-top:8px"></div>
+          </div>
+
+          <!-- Step B: enter code + new password -->
+          <div id="rp-s2" style="display:none">
+            <div style="font-size:12px;color:#888;margin-bottom:12px">Code sent to <b id="rpEmailLbl"></b></div>
+            <label class="albl" style="font-size:11px;color:#888;font-weight:600;letter-spacing:.4px;margin-bottom:6px;display:block">6-DIGIT CODE</label>
+            <div class="code-row" style="margin-bottom:12px">
+              <input class="cbox" id="rp0" maxlength="1" oninput="rpci(0)" onkeydown="rpck(event,0)">
+              <input class="cbox" id="rp1" maxlength="1" oninput="rpci(1)" onkeydown="rpck(event,1)">
+              <input class="cbox" id="rp2" maxlength="1" oninput="rpci(2)" onkeydown="rpck(event,2)">
+              <input class="cbox" id="rp3" maxlength="1" oninput="rpci(3)" onkeydown="rpck(event,3)">
+              <input class="cbox" id="rp4" maxlength="1" oninput="rpci(4)" onkeydown="rpck(event,4)">
+              <input class="cbox" id="rp5" maxlength="1" oninput="rpci(5)" onkeydown="rpck(event,5)">
+            </div>
+            <label class="albl" style="font-size:11px;color:#888;font-weight:600;letter-spacing:.4px;margin-bottom:6px;display:block">NEW PASSWORD</label>
+            <input id="rpNewPw" class="ainp" type="password" placeholder="At least 8 characters" style="margin-bottom:10px">
+            <input id="rpConfPw" class="ainp" type="password" placeholder="Confirm new password" style="margin-bottom:10px">
+            <button id="rpResetBtn" class="abtn" style="padding:10px;font-size:12px" onclick="rpDoReset()">Change Password</button>
+            <div class="aerr" id="rpErr2" style="margin-top:8px"></div>
+            <div style="font-size:11px;color:#a0a0b8;margin-top:8px;cursor:pointer" onclick="rpResend()">Didn't get it? <u>Resend code</u></div>
+          </div>
+
+          <!-- Step C: success -->
+          <div id="rp-s3" style="display:none;text-align:center;padding:12px 0">
+            <div style="font-size:28px;margin-bottom:8px">✅</div>
+            <div style="font-size:14px;font-weight:700;color:#22c55e;margin-bottom:4px">Password Changed!</div>
+            <div style="font-size:12px;color:#888">Your new password is active.</div>
+          </div>
+
+          <div style="margin-top:12px">
+            <button onclick="closeResetPw()" style="background:none;border:none;font-size:12px;color:#a0a0b8;cursor:pointer;font-family:inherit">✕ Cancel</button>
+          </div>
         </div>
 
       </div><!-- /scroll-area -->
@@ -785,7 +833,7 @@ button,input{font-family:inherit;cursor:pointer}
 
 <script>
 const api = window.electronAPI;
-var vEmail = ''; var currentMode = 'left'; var currentInterval = 100; var currentLimit = 0;
+var vEmail = ''; var vOtpToken = ''; var currentMode = 'left'; var currentInterval = 100; var currentLimit = 0;
 var allPresets = []; var activeFilter = 'all';
 var macroIsRecording = false; var macroIsPlaying = false; var macroLoop = false;
 var macroEvents = []; var hkListening = false; var keyFocused = false;
@@ -898,7 +946,8 @@ async function doSendCode() {
   const result = await api.sendCode(e);
   b.disabled = false; b.textContent = 'Send Verification Code';
   if (result && result.sent) {
-    vEmail = e; document.getElementById('emailLbl').textContent = vEmail;
+    vEmail = e; vOtpToken = result.token || '';
+    document.getElementById('emailLbl').textContent = vEmail;
     showStep(2); document.getElementById('c0').focus();
   } else {
     document.getElementById('s1Err').textContent = (result && result.error) || 'Could not send code';
@@ -911,12 +960,18 @@ async function doVerify() {
   var code = getCode(); if (code.length < 6) { document.getElementById('s2Err').textContent = 'Enter all 6 digits'; return; }
   document.getElementById('s2Err').textContent = '';
   var b = document.getElementById('verifyBtn'); b.disabled = true; b.textContent = 'Verifying...';
-  const result = await api.verifyCode(vEmail, code);
+  const result = await api.verifyCode(vEmail, code, vOtpToken);
   b.disabled = false; b.textContent = 'Verify Code';
-  if (result && result.valid) showStep(3);
+  if (result && result.valid) { vOtpToken = result.token || vOtpToken; showStep(3); }
   else document.getElementById('s2Err').textContent = (result && result.error) || 'Invalid code';
 }
-async function doResend() { for (var i = 0; i < 6; i++) document.getElementById('c' + i).value = ''; document.getElementById('s2Err').textContent = 'Sending...'; await api.sendCode(vEmail); document.getElementById('s2Err').textContent = ''; }
+async function doResend() {
+  for (var i = 0; i < 6; i++) document.getElementById('c' + i).value = '';
+  document.getElementById('s2Err').textContent = 'Sending...';
+  var r = await api.sendCode(vEmail);
+  if (r && r.token) vOtpToken = r.token;
+  document.getElementById('s2Err').textContent = '';
+}
 async function doActivate() {
   var k = document.getElementById('licInp').value.trim(); if (!k) { document.getElementById('s3Err').textContent = 'Enter your license key'; return; }
   document.getElementById('s3Err').textContent = '';
@@ -1279,6 +1334,76 @@ function toggleLoop() {
 async function clearMacro() {
   if (macroIsRecording || macroIsPlaying) return;
   macroEvents = []; refreshMacroUI();
+}
+
+/* ════════════════════════════════════════
+   CHANGE PASSWORD
+════════════════════════════════════════ */
+var rpToken = '';
+var rpEmailVal = '';
+
+function openResetPw() {
+  document.getElementById('resetPwPanel').style.display = 'block';
+  document.getElementById('rp-s1').style.display = 'block';
+  document.getElementById('rp-s2').style.display = 'none';
+  document.getElementById('rp-s3').style.display = 'none';
+  document.getElementById('rpEmail').value = vEmail || '';
+  document.getElementById('rpErr1').textContent = '';
+  rpToken = ''; rpEmailVal = '';
+}
+function closeResetPw() {
+  document.getElementById('resetPwPanel').style.display = 'none';
+}
+async function rpSendCode() {
+  var e = document.getElementById('rpEmail').value.trim();
+  if (!e || e.indexOf('@') < 0) { document.getElementById('rpErr1').textContent = 'Enter a valid email'; return; }
+  document.getElementById('rpErr1').textContent = '';
+  var btn = document.getElementById('rpSendBtn'); btn.disabled = true; btn.textContent = 'Sending...';
+  var r = await api.sendCode(e);
+  btn.disabled = false; btn.textContent = 'Send Reset Code';
+  if (r && r.sent) {
+    rpEmailVal = e; rpToken = r.token || '';
+    document.getElementById('rpEmailLbl').textContent = e;
+    document.getElementById('rp-s1').style.display = 'none';
+    document.getElementById('rp-s2').style.display = 'block';
+    document.getElementById('rp0').focus();
+  } else {
+    document.getElementById('rpErr1').textContent = (r && r.error) || 'Could not send code. Try again.';
+  }
+}
+function rpci(i) {
+  var v = document.getElementById('rp' + i).value.replace(/[^0-9]/g, '');
+  document.getElementById('rp' + i).value = v;
+  if (v && i < 5) document.getElementById('rp' + (i + 1)).focus();
+  if (i === 5 && v) rpDoReset();
+}
+function rpck(e, i) { if (e.keyCode === 8 && !document.getElementById('rp' + i).value && i > 0) document.getElementById('rp' + (i - 1)).focus(); }
+function rpGetCode() { var c = ''; for (var i = 0; i < 6; i++) c += document.getElementById('rp' + i).value; return c; }
+async function rpResend() {
+  for (var i = 0; i < 6; i++) document.getElementById('rp' + i).value = '';
+  document.getElementById('rpErr2').textContent = 'Sending...';
+  var r = await api.sendCode(rpEmailVal);
+  if (r && r.token) rpToken = r.token;
+  document.getElementById('rpErr2').textContent = '';
+}
+async function rpDoReset() {
+  var code = rpGetCode();
+  if (code.length < 6) { document.getElementById('rpErr2').textContent = 'Enter all 6 digits'; return; }
+  var pw   = document.getElementById('rpNewPw').value;
+  var conf = document.getElementById('rpConfPw').value;
+  if (!pw || pw.length < 8) { document.getElementById('rpErr2').textContent = 'Password must be at least 8 characters'; return; }
+  if (pw !== conf) { document.getElementById('rpErr2').textContent = 'Passwords do not match'; return; }
+  document.getElementById('rpErr2').textContent = '';
+  var btn = document.getElementById('rpResetBtn'); btn.disabled = true; btn.textContent = 'Changing...';
+  var r = await api.resetPassword(rpEmailVal, code, rpToken, pw);
+  btn.disabled = false; btn.textContent = 'Change Password';
+  if (r && r.success) {
+    document.getElementById('rp-s2').style.display = 'none';
+    document.getElementById('rp-s3').style.display = 'block';
+    setTimeout(function() { closeResetPw(); }, 3000);
+  } else {
+    document.getElementById('rpErr2').textContent = (r && r.error) || 'Failed. Please try again.';
+  }
 }
 
 /* ════════════════════════════════════════

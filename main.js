@@ -125,7 +125,7 @@ function openPickOverlay(forMulti = false) {
     skipTaskbar: true,
     webPreferences: {
       preload:          path.join(__dirname, 'overlay-preload.js'),
-      contextIsolation: false,
+      contextIsolation: true,
       nodeIntegration:  false,
     },
   });
@@ -265,9 +265,10 @@ ipcMain.handle('hotkey:set', (_, key) => { registerHotkey(key); return key; });
 ipcMain.handle('hotkey:get', ()        => hotkey);
 
 // License
-ipcMain.handle('license:check',      (_, key)         => license.checkLicense(key));
-ipcMain.handle('license:sendCode',   (_, email)       => license.sendCode(email));
-ipcMain.handle('license:verifyCode', (_, email, code) => license.verifyCode(email, code));
+ipcMain.handle('license:check',         (_, key)                      => license.checkLicense(key));
+ipcMain.handle('license:sendCode',      (_, email)                    => license.sendCode(email));
+ipcMain.handle('license:verifyCode',    (_, email, code, token)       => license.verifyCode(email, code, token));
+ipcMain.handle('license:resetPassword', (_, email, code, token, pw)  => license.resetPassword(email, code, token, pw));
 ipcMain.handle('license:get',        ()               => store.get('license'));
 ipcMain.handle('license:save',       (_, data)        => { store.set('license', data); });
 ipcMain.handle('license:clear',      ()               => { store.set('license', null); });
@@ -300,8 +301,16 @@ ipcMain.handle('store:deletePreset', (_, id) => {
 });
 ipcMain.handle('store:getPresets', () => store.get('presets') || []);
 
-// Shell
-ipcMain.handle('shell:openURL', (_, url) => shell.openExternal(url));
+// Shell — only allow http/https URLs to prevent protocol injection
+ipcMain.handle('shell:openURL', (_, url) => {
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+      return shell.openExternal(url);
+    }
+  } catch {}
+  console.warn('[shell:openURL] Blocked unsafe URL:', String(url).slice(0, 100));
+});
 
 // Window controls
 ipcMain.on('window:minimize', () => mainWindow?.minimize());

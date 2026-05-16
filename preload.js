@@ -29,9 +29,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getHotkey:    ()          => ipcRenderer.invoke('hotkey:get'),
 
   // ── License ───────────────────────────────────────────────────────
-  checkLicense: (key)       => ipcRenderer.invoke('license:check', key),
-  sendCode:     (email)     => ipcRenderer.invoke('license:sendCode', email),
-  verifyCode:   (email, c)  => ipcRenderer.invoke('license:verifyCode', email, c),
+  checkLicense:   (key)              => ipcRenderer.invoke('license:check', key),
+  sendCode:       (email)            => ipcRenderer.invoke('license:sendCode', email),
+  verifyCode:     (email, c, token)  => ipcRenderer.invoke('license:verifyCode', email, c, token),
+  resetPassword:  (email, c, token, pw) => ipcRenderer.invoke('license:resetPassword', email, c, token, pw),
   getLicense:   ()          => ipcRenderer.invoke('license:get'),
   saveLicense:  (data)      => ipcRenderer.invoke('license:save', data),
   clearLicense: ()          => ipcRenderer.invoke('license:clear'),

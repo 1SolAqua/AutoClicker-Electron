@@ -7,7 +7,7 @@ const crypto = require('crypto');
 
 const API_BASE   = 'https://autoclicker-pi.vercel.app/api';
 // Must match process.env.APP_HMAC_SECRET on the server
-const APP_SECRET = 'tmIaZxuvP8ebujVQhS/qRexvJYxe6UitGW4lAT0Wpgpj7/Cli/dl7XTPChGUlvCa';
+const APP_SECRET = 'pFhYDxg5REXzvCMyUG42FlGI+tCOhVNfx7xOwgGjNnChvEZXsOTyMRmp5XdBunTT';
 
 function getMachineId() {
   const raw = `${os.hostname()}|${os.userInfo().username}|${os.cpus()[0]?.model || 'cpu'}`;
@@ -53,20 +53,27 @@ function post(path, body) {
 
 async function checkLicense(key) {
   try {
-    return await post('/check', { key, machineId: getMachineId() });
+    // Detect platform so the server can enforce Win/Mac key separation
+    const platform = process.platform === 'darwin' ? 'mac' : 'win';
+    return await post('/check', { key, machineId: getMachineId(), platform });
   } catch {
     return null;
   }
 }
 
 async function sendCode(email) {
-  try { return await post('/auth/send-code', { email }); }
+  try { return await post('/auth/change-password', { action: 'send', email }); }
   catch { return null; }
 }
 
-async function verifyCode(email, code) {
-  try { return await post('/auth/verify-code', { email, code }); }
+async function verifyCode(email, code, token) {
+  try { return await post('/auth/change-password', { action: 'verify', email, code, token }); }
   catch { return null; }
 }
 
-module.exports = { checkLicense, sendCode, verifyCode, getMachineId };
+async function resetPassword(email, code, token, newPassword) {
+  try { return await post('/auth/change-password', { action: 'reset', email, code, token, newPassword }); }
+  catch { return null; }
+}
+
+module.exports = { checkLicense, sendCode, verifyCode, resetPassword, getMachineId };
