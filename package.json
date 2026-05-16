@@ -7,9 +7,9 @@
   "license": "ISC",
   "scripts": {
     "start": "electron .",
-    "build:win": "electron-builder --win",
-    "build:mac": "electron-builder --mac",
-    "build:all": "electron-builder --win --mac"
+    "build:win": "node scripts/inject-secrets.js && electron-builder --win",
+    "build:mac": "node scripts/inject-secrets.js && electron-builder --mac",
+    "build:all": "node scripts/inject-secrets.js && electron-builder --win --mac"
   },
   "dependencies": {
     "electron-store": "^7.0.3"
@@ -21,6 +21,7 @@
   "build": {
     "appId": "gg.autoclicker.app",
     "productName": "AutoClicker",
+    "asar": true,
     "directories": {
       "output": "dist"
     },

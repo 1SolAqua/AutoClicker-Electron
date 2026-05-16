@@ -6,8 +6,8 @@ const os     = require('os');
 const crypto = require('crypto');
 
 const API_BASE   = 'https://autoclicker-pi.vercel.app/api';
-// Must match process.env.APP_HMAC_SECRET on the server
-const APP_SECRET = 'pFhYDxg5REXzvCMyUG42FlGI+tCOhVNfx7xOwgGjNnChvEZXsOTyMRmp5XdBunTT';
+// Secret is injected at build time via scripts/inject-secrets.js — never hardcoded in source
+const { APP_SECRET } = require('./secrets');
 
 function getMachineId() {
   const raw = `${os.hostname()}|${os.userInfo().username}|${os.cpus()[0]?.model || 'cpu'}`;

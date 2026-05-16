@@ -1,2 +1,8 @@
 node_modules/
 dist/
+
+# Auto-generated secrets file — NEVER commit
+src/secrets.js
+
+# Local build env — NEVER commit
+.env.build
