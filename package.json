@@ -1,0 +1,40 @@
+{
+  "name": "autoclicker",
+  "version": "1.0.0",
+  "description": "AutoClicker — fast, clean, cross-platform",
+  "main": "main.js",
+  "author": "AutoClicker",
+  "license": "ISC",
+  "scripts": {
+    "start": "electron .",
+    "build:win": "electron-builder --win",
+    "build:mac": "electron-builder --mac",
+    "build:all": "electron-builder --win --mac"
+  },
+  "dependencies": {
+    "electron-store": "^7.0.3"
+  },
+  "devDependencies": {
+    "electron": "^42.1.0",
+    "electron-builder": "^26.8.1"
+  },
+  "build": {
+    "appId": "gg.autoclicker.app",
+    "productName": "AutoClicker",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "mac": {
+      "target": "dmg",
+      "category": "public.app-category.utilities"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false
+    },
+    "forceCodeSigning": false
+  }
+}

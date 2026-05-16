@@ -1,0 +1,1344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AutoClicker</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;font-family:'Segoe UI',system-ui,sans-serif;font-size:14px;color:#1a1b2e}
+button,input{font-family:inherit;cursor:pointer}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#d4d4e8;border-radius:4px}
+
+/* ═══════════════════════════════════════════════════════════
+   AUTH OVERLAY
+══════════════════════════════════════════════════════════ */
+.auth-wrap{position:fixed;inset:0;background:#06040f;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;padding:20px;-webkit-app-region:drag}
+.auth-orb{position:absolute;border-radius:50%;filter:blur(60px);pointer-events:none}
+.ao1{width:320px;height:320px;background:rgba(108,92,231,.18);top:-60px;right:-60px}
+.ao2{width:240px;height:240px;background:rgba(74,108,247,.14);bottom:20px;left:-40px}
+.ao3{width:180px;height:180px;background:rgba(168,85,247,.12);top:40%;left:30%}
+.auth-logo{width:58px;height:58px;background:linear-gradient(135deg,#7c3aed,#4f46e5);border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;box-shadow:0 8px 28px rgba(124,58,237,.5);position:relative;z-index:1;-webkit-app-region:no-drag}
+.auth-brand{font-size:20px;font-weight:900;color:#f1f5f9;text-align:center;margin-bottom:2px;position:relative;z-index:1;letter-spacing:-.4px}
+.auth-brand-sub{font-size:9px;color:#3a3a6a;text-align:center;margin-bottom:24px;text-transform:uppercase;letter-spacing:1.2px;font-weight:700;position:relative;z-index:1}
+.auth-card{background:#0f0f28;border:1px solid #1a1a38;border-radius:18px;padding:24px;width:300px;box-shadow:0 24px 64px rgba(0,0,0,.7);position:relative;z-index:1;-webkit-app-region:no-drag}
+.ascreen{display:none}.ascreen.show{display:block}
+.steps-bar{display:flex;align-items:center;margin-bottom:18px;position:relative;z-index:1;-webkit-app-region:no-drag}
+.sdot{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;border:2px solid #1e1e3a;color:#2e2e5a;transition:all .3s}
+.sdot.done{background:linear-gradient(135deg,#7c3aed,#4f46e5);border-color:transparent;color:#fff}
+.sdot.active{border-color:#7c3aed;color:#a78bfa}
+.sline{width:20px;height:2px;background:#1e1e3a;border-radius:2px;transition:background .3s}
+.sline.done{background:#7c3aed}
+.choice-row{display:flex;margin-bottom:0}
+.ccard{flex:1;background:#0a0a20;border:1.5px solid #1a1a38;border-radius:14px;padding:20px 12px 16px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s,transform .15s;position:relative;overflow:hidden}
+.ccard:hover{border-color:#7c3aed;background:#111132;transform:translateY(-2px)}
+.ccard+.ccard{margin-left:10px}
+.ccard-ico{width:46px;height:46px;background:rgba(124,58,237,.12);border:1px solid rgba(124,58,237,.2);border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;transition:all .2s}
+.ccard:hover .ccard-ico{background:rgba(124,58,237,.22)}
+.ccard-name{font-size:13px;font-weight:800;color:#c4b5fd;margin-bottom:4px}
+.ccard-sub{font-size:10px;color:#334155;line-height:1.4}
+.auth-title{font-size:15px;font-weight:800;color:#f1f5f9;margin-bottom:3px}
+.auth-sub{font-size:11px;color:#475569;margin-bottom:18px;line-height:1.5}
+.auth-sub b{color:#a78bfa}
+.albl{display:block;font-size:9px;font-weight:800;letter-spacing:.7px;text-transform:uppercase;color:#334155;margin-bottom:5px}
+.ainp{width:100%;padding:10px 12px;background:#070714;border:1.5px solid #1a1a38;border-radius:9px;font-size:13px;color:#f1f5f9;outline:none;transition:border-color .15s;margin-bottom:12px}
+.ainp:focus{border-color:#7c3aed}
+.ainp.key-inp{text-align:center;letter-spacing:2px;font-family:'Courier New',monospace;font-size:13px;font-weight:700;text-transform:uppercase}
+.abtn{width:100%;padding:11px;background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;transition:opacity .15s;box-shadow:0 4px 16px rgba(124,58,237,.35);letter-spacing:.3px}
+.abtn:hover{opacity:.88}.abtn:disabled{opacity:.35;cursor:not-allowed}
+.aerr{font-size:11px;color:#f87171;margin-top:8px;min-height:14px;font-weight:600;text-align:center}
+.alink{font-size:11px;color:#334155;text-align:center;margin-top:10px}
+.alink b{color:#7c3aed;cursor:pointer}
+.code-row{display:flex;margin-bottom:12px}
+.cbox{flex:1;padding:11px 2px;background:#070714;border:1.5px solid #1a1a38;border-radius:9px;font-family:'Courier New',monospace;font-size:18px;font-weight:800;color:#a78bfa;text-align:center;outline:none;transition:border-color .15s}
+.cbox:focus{border-color:#7c3aed}
+.cbox+.cbox{margin-left:6px}
+#quickLoginWrap{display:none;margin-top:10px}
+.quick-div{height:1px;background:#1a1a38;margin-bottom:10px}
+.quick-btn{width:100%;padding:8px 6px;background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.3px;box-shadow:0 3px 10px rgba(124,58,237,.35)}
+#quickDays{font-size:9px;color:#7c3aed;margin-top:5px;font-weight:700;text-align:center}
+
+/* ═══════════════════════════════════════════════════════════
+   MAIN APP SHELL
+══════════════════════════════════════════════════════════ */
+.app{display:none;height:100%;width:100%;flex-direction:column}
+.app.show{display:flex}
+
+/* Minimal titlebar (drag region + controls) */
+.titlebar{height:32px;background:#12102a;display:flex;align-items:center;justify-content:space-between;padding:0 0 0 12px;-webkit-app-region:drag;flex-shrink:0;border-bottom:1px solid rgba(255,255,255,.04)}
+.tb-logo{display:flex;align-items:center;gap:7px;font-size:11px;font-weight:700;color:rgba(255,255,255,.3)}
+.tb-icon{width:16px;height:16px;background:linear-gradient(135deg,#6c5ce7,#4a6cf7);border-radius:4px;display:flex;align-items:center;justify-content:center}
+.tb-win-controls{display:flex;-webkit-app-region:no-drag}
+.tb-win-btn{width:40px;height:32px;border:none;background:transparent;color:rgba(255,255,255,.35);font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .1s}
+.tb-win-btn:hover{background:rgba(255,255,255,.07)}
+.tb-win-btn.close:hover{background:#e81123;color:#fff}
+.tb-mac-controls{display:none;gap:6px;padding:0 8px;-webkit-app-region:no-drag;align-items:center}
+.tb-mac-btn{width:12px;height:12px;border-radius:50%;border:none;cursor:pointer;transition:opacity .15s}
+.tb-mac-btn:hover{opacity:.8}
+.tb-mac-close{background:#ff5f57}.tb-mac-min{background:#febc2e}.tb-mac-max{background:#28c840}
+
+.app-body{display:flex;flex:1;overflow:hidden}
+
+/* ═══════════════════════════════════════════════════════════
+   SIDEBAR
+══════════════════════════════════════════════════════════ */
+.sidebar{width:218px;min-width:218px;background:#1a1b2e;display:flex;flex-direction:column;overflow:hidden;border-right:1px solid rgba(255,255,255,.04)}
+.sb-logo{padding:18px 16px 12px;display:flex;align-items:center}
+.sb-ico{width:38px;height:38px;background:linear-gradient(135deg,#6c5ce7,#4a6cf7);border-radius:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-right:11px;box-shadow:0 4px 14px rgba(108,92,231,.45)}
+.sb-title{font-size:15px;font-weight:800;color:#fff;letter-spacing:-.4px;line-height:1.15}
+.sb-ver{font-size:9px;color:rgba(255,255,255,.25);font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.sb-nav{flex:1;padding:4px 10px;overflow:hidden}
+.nav-item{display:flex;align-items:center;width:100%;padding:10px 12px;border-radius:10px;margin-bottom:2px;cursor:pointer;font-size:13px;font-weight:600;color:rgba(255,255,255,.38);border:none;background:transparent;text-align:left;outline:none;transition:color .15s,background .15s}
+.nav-item:hover{background:rgba(255,255,255,.06);color:rgba(255,255,255,.7)}
+.nav-item.active{background:linear-gradient(135deg,#6c5ce7,#4a6cf7);color:#fff;box-shadow:0 4px 14px rgba(108,92,231,.4)}
+.nav-item svg{width:16px;height:16px;margin-right:10px;flex-shrink:0;opacity:.6}
+.nav-item.active svg,.nav-item:hover svg{opacity:1}
+.sb-bottom{padding:12px 10px;border-top:1px solid rgba(255,255,255,.05)}
+.sb-user{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:10px 12px;display:flex;align-items:center}
+.sb-av{width:30px;height:30px;background:linear-gradient(135deg,#6c5ce7,#4a6cf7);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;margin-right:9px;flex-shrink:0}
+.sb-em{font-size:10px;color:rgba(255,255,255,.4);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:122px}
+.sb-dy{font-size:9px;color:#7c6cf0;font-weight:800;text-transform:uppercase;letter-spacing:.3px;margin-top:1px}
+
+/* ═══════════════════════════════════════════════════════════
+   CONTENT AREA
+══════════════════════════════════════════════════════════ */
+.content{flex:1;background:#f0f1f8;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.page-hdr{background:#fff;padding:14px 20px;display:flex;align-items:center;border-bottom:1.5px solid #e8e9f4;flex-shrink:0}
+.ph-icon{width:44px;height:44px;background:linear-gradient(135deg,#6c5ce7,#4a6cf7);border-radius:12px;display:flex;align-items:center;justify-content:center;margin-right:14px;flex-shrink:0;box-shadow:0 4px 14px rgba(108,92,231,.35)}
+.ph-title{font-size:17px;font-weight:800;color:#1a1b2e;letter-spacing:-.4px}
+.ph-sub{font-size:11px;color:#8888a0;margin-top:2px}
+.scroll-area{flex:1;overflow-y:auto;padding:16px 18px}
+.page{display:none}.page.active{display:block}
+
+/* ── Shared labels ── */
+.slabel{font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#a0a0b8;margin-bottom:10px;margin-top:2px}
+
+/* ── Cards ── */
+.card{background:#fff;border:1.5px solid #e8e9f4;border-radius:14px;box-shadow:0 2px 10px rgba(0,0,0,.05);padding:16px 18px;margin-bottom:12px}
+.card-title{font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#a0a0b8;margin-bottom:14px}
+
+/* ═══════════════════════════════════════════════════════════
+   HOME PAGE — 2×2 grid
+══════════════════════════════════════════════════════════ */
+.home-grid{display:flex;flex-wrap:wrap;margin:-8px}
+.home-card{width:calc(50% - 16px);margin:8px;background:#fff;border:1px solid #eaeaf4;border-radius:12px;padding:32px 20px 26px;text-align:center;cursor:pointer;transition:border-color .18s,box-shadow .18s,transform .14s}
+.home-card:hover{border-color:#b0a8f0;box-shadow:0 4px 20px rgba(108,92,231,.12);transform:translateY(-2px)}
+.home-card.active{border-color:#6c5ce7;box-shadow:0 4px 20px rgba(108,92,231,.18)}
+.hc-icon{width:62px;height:62px;background:linear-gradient(135deg,#7c6cf7,#5a5aef);border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
+.hc-name{font-size:14px;font-weight:500;color:#333344;letter-spacing:-.1px}
+
+/* ═══════════════════════════════════════════════════════════
+   SINGLE TARGET / MULTI TARGET PAGES
+══════════════════════════════════════════════════════════ */
+.fc-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.fc-section{font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#a0a0b8;margin-bottom:12px}
+.fc-title-lg{font-size:14px;font-weight:800;color:#2a2b3e}
+.ct-row{display:flex;border:1.5px solid #e0e0ef;border-radius:9px;overflow:hidden}
+.ct-btn{flex:1;padding:11px;background:#f5f5fc;border:none;font-size:12px;font-weight:700;color:#8888a0;transition:all .15s;outline:none;cursor:pointer}
+.ct-btn+.ct-btn{border-left:1.5px solid #e0e0ef}
+.ct-btn.on{background:linear-gradient(135deg,#6c5ce7,#4a6cf7);color:#fff}
+.target-grid{display:flex;margin:-5px}
+.tgt-btn{flex:1;margin:5px;background:#fff;border:1.5px solid #e8e9f4;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.04);padding:14px 8px 12px;text-align:center;cursor:pointer;transition:border-color .15s,transform .12s;outline:none}
+.tgt-btn:hover{border-color:#6c5ce7;transform:translateY(-1px)}
+.tgt-btn.active{border-color:#6c5ce7;background:rgba(108,92,231,.04)}
+.tb-ico{width:36px;height:36px;background:rgba(108,92,231,.1);border:1px solid rgba(108,92,231,.15);border-radius:9px;display:flex;align-items:center;justify-content:center;margin:0 auto 7px;transition:background .15s}
+.tgt-btn:hover .tb-ico,.tgt-btn.active .tb-ico{background:rgba(108,92,231,.18)}
+.tb-name{font-size:10px;font-weight:700;color:#8888a0}
+.tgt-btn:hover .tb-name,.tgt-btn.active .tb-name{color:#6c5ce7}
+.preview-panel{background:#fff;border:1.5px solid #e8e9f4;border-radius:12px;padding:12px 14px;margin-top:10px;display:none}
+.preview-panel.show{display:block}
+.tinfo{font-size:11px;color:#b0b0c8;text-align:center;font-weight:600}
+.tinfo.set{color:#6c5ce7}.tinfo.warn{color:#ef4444}
+.info-banner{background:rgba(108,92,231,.06);border:1.5px solid rgba(108,92,231,.15);border-radius:12px;padding:12px 16px;margin-bottom:14px;font-size:12px;color:#555577;line-height:1.65}
+.info-banner b{color:#6c5ce7}
+.add-tgt-btn{padding:7px 16px;background:rgba(108,92,231,.1);color:#6c5ce7;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;transition:background .15s;flex-shrink:0;outline:none}
+.add-tgt-btn:hover{background:rgba(108,92,231,.2)}
+.add-tgt-btn:disabled{opacity:.35;cursor:not-allowed}
+.multi-target-item{display:flex;align-items:center;padding:10px 12px;background:#f8f8fd;border-radius:9px;margin-bottom:6px}
+.mti-num{width:26px;height:26px;background:linear-gradient(135deg,#6c5ce7,#4a6cf7);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;margin-right:11px;flex-shrink:0}
+.mti-coords{flex:1;font-size:12px;color:#3a3b55;font-weight:600}
+.mti-del{width:28px;height:28px;background:rgba(239,68,68,.08);color:#ef4444;border:none;border-radius:7px;font-size:16px;font-weight:700;cursor:pointer;transition:background .15s;line-height:1;padding:0;outline:none}
+.mti-del:hover{background:rgba(239,68,68,.18)}
+.multi-empty{padding:32px 20px;text-align:center;color:#b0b0c8;font-size:12px;font-weight:600;line-height:1.8}
+.fc-speed-row{display:flex;align-items:center;margin-bottom:10px}
+.fc-speed-row:last-child{margin-bottom:0}
+.fc-speed-lbl{font-size:12px;font-weight:700;color:#3a3b55;width:120px;flex-shrink:0}
+.fc-speed-inp{flex:1;padding:8px 11px;background:#f5f5fc;border:1.5px solid #e0e0ef;border-radius:8px;font-size:13px;color:#1a1b2e;outline:none;transition:border-color .15s}
+.fc-speed-inp:focus{border-color:#6c5ce7}
+.fc-speed-inp[type=number]::-webkit-inner-spin-button,.fc-speed-inp[type=number]::-webkit-outer-spin-button{-webkit-appearance:none}
+
+/* ── Key / Scroll sub-config ── */
+.cfg-panel{display:none;background:#fff;border:1.5px solid #e8e9f4;border-radius:12px;padding:14px 16px;margin-bottom:14px}
+.cfg-panel.show{display:block}
+.cfg-lbl{font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:#a0a0b8;margin-bottom:8px}
+.key-input{width:100%;padding:10px 14px;background:#f5f5fc;border:1.5px solid #e0e0ef;border-radius:9px;font-family:'Courier New',monospace;font-size:13px;font-weight:700;color:#1a1b2e;text-align:center;letter-spacing:1px;outline:none;cursor:pointer;transition:border-color .15s}
+.key-input:focus,.key-input.waiting{border-color:#6c5ce7;color:#6c5ce7}
+.key-input.captured{border-color:#22c55e;color:#22c55e}
+.scroll-dir{display:flex;border:1.5px solid #e0e0ef;border-radius:9px;overflow:hidden}
+.sd-btn{flex:1;padding:9px;background:#f5f5fc;border:none;font-size:12px;font-weight:700;color:#8888a0;transition:all .15s;outline:none}
+.sd-btn+.sd-btn{border-left:1.5px solid #e0e0ef}
+.sd-btn.on{background:linear-gradient(135deg,#6c5ce7,#4a6cf7);color:#fff}
+
+/* ═══════════════════════════════════════════════════════════
+   MACRO RECORDER PAGE
+══════════════════════════════════════════════════════════ */
+.macro-hero{background:#fff;border:1.5px solid #e8e9f4;border-radius:14px;padding:24px 20px;text-align:center;margin-bottom:12px}
+.rec-btn{display:inline-block;width:88px;height:88px;border-radius:50%;border:none;cursor:pointer;position:relative;transition:transform .15s,box-shadow .2s;outline:none;margin-bottom:14px}
+.rec-btn.idle{background:linear-gradient(135deg,#6c5ce7,#4a6cf7);box-shadow:0 8px 28px rgba(108,92,231,.45)}
+.rec-btn.recording{background:linear-gradient(135deg,#ef4444,#dc2626);box-shadow:0 8px 28px rgba(239,68,68,.5);animation:recpulse 1.2s ease-in-out infinite}
+.rec-btn:hover{transform:scale(1.06)}.rec-btn:active{transform:scale(.96)}
+.rec-dot{width:28px;height:28px;background:#fff;border-radius:50%;position:absolute;top:50%;left:50%;margin-top:-14px;margin-left:-14px;transition:border-radius .2s}
+.rec-btn.recording .rec-dot{border-radius:5px;width:22px;height:22px;margin-top:-11px;margin-left:-11px}
+.rec-status{font-size:13px;font-weight:700;color:#3a3b55;margin-bottom:4px}
+.rec-status.recording{color:#ef4444}
+.rec-count{font-size:28px;font-weight:900;color:#6c5ce7;letter-spacing:-1px;line-height:1;margin-bottom:2px}
+.rec-count-lbl{font-size:11px;color:#a0a0b8;font-weight:600}
+.macro-actions{display:flex;margin:-4px;margin-bottom:12px}
+.mac-btn{flex:1;margin:4px;padding:10px;border:1.5px solid #e8e9f4;border-radius:10px;background:#fff;font-size:12px;font-weight:700;color:#3a3b55;cursor:pointer;transition:all .15s;box-shadow:0 2px 6px rgba(0,0,0,.04)}
+.mac-btn:hover{border-color:#6c5ce7;color:#6c5ce7}
+.mac-btn.primary{background:linear-gradient(135deg,#6c5ce7,#4a6cf7);border-color:transparent;color:#fff;box-shadow:0 4px 14px rgba(108,92,231,.35)}
+.mac-btn.danger{border-color:#fee2e2;color:#ef4444;background:#fff}
+.mac-btn.danger:hover{background:#fee2e2}
+.mac-btn:disabled{opacity:.28;cursor:not-allowed}
+.events-card{background:#fff;border:1.5px solid #e8e9f4;border-radius:14px;overflow:hidden}
+.events-hdr{padding:12px 16px;border-bottom:1.5px solid #f0f0f8;display:flex;align-items:center;justify-content:space-between}
+.events-title{font-size:11px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:#a0a0b8}
+.events-badge{background:rgba(108,92,231,.1);color:#6c5ce7;font-size:11px;font-weight:800;padding:2px 10px;border-radius:999px}
+.events-list{max-height:160px;overflow-y:auto;padding:8px}
+.event-row{display:flex;align-items:center;padding:7px 10px;border-radius:8px;margin-bottom:2px;background:#f8f8fd}
+.ev-idx{font-size:10px;color:#b0b0c8;font-weight:700;width:24px;flex-shrink:0}
+.ev-type{width:22px;height:22px;border-radius:6px;background:linear-gradient(135deg,#6c5ce7,#4a6cf7);display:flex;align-items:center;justify-content:center;margin-right:8px;flex-shrink:0}
+.ev-type.right{background:linear-gradient(135deg,#f59e0b,#d97706)}
+.ev-pos{font-size:11px;color:#3a3b55;font-weight:600;flex:1}
+.ev-delay{font-size:10px;color:#a0a0b8;font-weight:600}
+.events-empty{padding:32px 20px;text-align:center;color:#b0b0c8;font-size:12px;font-weight:600}
+@keyframes recpulse{0%,100%{box-shadow:0 8px 28px rgba(239,68,68,.5)}50%{box-shadow:0 8px 40px rgba(239,68,68,.85)}}
+
+/* ═══════════════════════════════════════════════════════════
+   PRESETS PAGE
+══════════════════════════════════════════════════════════ */
+.filter-bar{display:flex;background:#fff;border:1.5px solid #e8e9f4;border-radius:11px;padding:4px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.ftab{flex:1;padding:8px 4px;background:transparent;border:none;border-radius:8px;font-size:11px;font-weight:700;color:#a0a0b8;transition:all .15s;outline:none;text-align:center;cursor:pointer}
+.ftab.on{background:linear-gradient(135deg,#6c5ce7,#4a6cf7);color:#fff;box-shadow:0 3px 10px rgba(108,92,231,.3)}
+.preset-save-form{background:#fff;border:1.5px solid #e8e9f4;border-radius:14px;padding:16px 18px;margin-bottom:12px}
+.psf-title{font-size:10px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:#a0a0b8;margin-bottom:10px}
+.psf-row{display:flex;align-items:center}
+.psf-inp{flex:1;padding:9px 12px;background:#f5f5fc;border:1.5px solid #e0e0ef;border-radius:8px;font-size:13px;color:#1a1b2e;outline:none;transition:border-color .15s;margin-right:8px}
+.psf-inp:focus{border-color:#6c5ce7}
+.psf-btn{padding:9px 18px;background:linear-gradient(135deg,#6c5ce7,#4a6cf7);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;box-shadow:0 3px 10px rgba(108,92,231,.3);transition:opacity .15s;flex-shrink:0}
+.psf-btn:hover{opacity:.88}
+.preset-empty{background:#fff;border:1.5px solid #e8e9f4;border-radius:14px;padding:52px 20px;text-align:center}
+.pe-ico{width:60px;height:60px;background:#f5f5fc;border:2px solid #e8e9f4;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 14px}
+.pe-title{font-size:15px;font-weight:800;color:#2a2b3e;margin-bottom:5px}
+.pe-sub{font-size:11px;color:#a0a0b8;line-height:1.6;margin-bottom:18px}
+.preset-item{background:#fff;border:1.5px solid #e8e9f4;border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;transition:border-color .15s}
+.preset-item:hover{border-color:#6c5ce7}
+.pi-ico{width:38px;height:38px;background:linear-gradient(135deg,#6c5ce7,#4a6cf7);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-right:12px}
+.pi-info{flex:1;min-width:0}
+.pi-name{font-size:13px;font-weight:700;color:#2a2b3e;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pi-meta{font-size:10px;color:#a0a0b8;margin-top:2px}
+.pi-actions{display:flex;align-items:center}
+.pi-use{padding:6px 14px;background:rgba(108,92,231,.1);color:#6c5ce7;border:none;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;transition:background .15s;margin-left:6px}
+.pi-use:hover{background:rgba(108,92,231,.2)}
+.pi-del{width:28px;height:28px;background:rgba(239,68,68,.08);color:#ef4444;border:none;border-radius:7px;font-size:14px;cursor:pointer;transition:background .15s;margin-left:4px;line-height:1;padding:0}
+.pi-del:hover{background:rgba(239,68,68,.18)}
+
+/* ═══════════════════════════════════════════════════════════
+   SETTINGS PAGE
+══════════════════════════════════════════════════════════ */
+.settings-card{background:#fff;border:1.5px solid #e8e9f4;border-radius:14px;padding:16px 18px;margin-bottom:12px}
+.sc-title{font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#a0a0b8;margin-bottom:14px}
+.srow{display:flex;align-items:center;margin-bottom:10px}
+.srow:last-child{margin-bottom:0}
+.srow-lbl{font-size:12px;font-weight:700;color:#3a3b55;width:120px;flex-shrink:0}
+.sinp{flex:1;padding:8px 11px;background:#f5f5fc;border:1.5px solid #e0e0ef;border-radius:8px;font-size:13px;color:#1a1b2e;outline:none;transition:border-color .15s}
+.sinp:focus{border-color:#6c5ce7}
+.sinp[type=number]::-webkit-inner-spin-button,.sinp[type=number]::-webkit-outer-spin-button{-webkit-appearance:none}
+.hotkey-badge{background:rgba(108,92,231,.1);border:1px solid rgba(108,92,231,.25);border-radius:6px;padding:4px 12px;font-size:12px;font-weight:700;color:#6c5ce7;cursor:pointer;transition:background .15s}
+.hotkey-badge:hover{background:rgba(108,92,231,.2)}
+
+/* ═══════════════════════════════════════════════════════════
+   ACCOUNT PAGE
+══════════════════════════════════════════════════════════ */
+.acct-hero{background:#fff;border:1.5px solid #e8e9f4;border-radius:14px;padding:22px;text-align:center;margin-bottom:12px}
+.acct-av{width:56px;height:56px;background:linear-gradient(135deg,#6c5ce7,#4a6cf7);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:#fff;margin:0 auto 10px;box-shadow:0 4px 18px rgba(108,92,231,.4)}
+.acct-em{font-size:14px;font-weight:700;color:#1a1b2e;margin-bottom:8px}
+.acct-badge{display:inline-block;padding:4px 16px;background:rgba(108,92,231,.1);border:1px solid rgba(108,92,231,.2);border-radius:999px;font-size:12px;font-weight:700;color:#6c5ce7}
+.acct-row{display:flex;align-items:center;justify-content:space-between;padding:11px 16px;background:#fff;border:1.5px solid #e8e9f4;border-radius:11px;margin-bottom:7px;box-shadow:0 2px 6px rgba(0,0,0,.03)}
+.acct-row.clickable{cursor:pointer;transition:border-color .15s}
+.acct-row.clickable:hover{border-color:#6c5ce7}
+.arl{font-size:11px;color:#8888a0;font-weight:600}
+.arv{font-size:12px;color:#3a3b55;font-weight:700}
+
+/* ═══════════════════════════════════════════════════════════
+   NOTIFICATIONS PAGE
+══════════════════════════════════════════════════════════ */
+.notif-row{background:#fff;border:1.5px solid #e8e9f4;border-radius:12px;padding:14px 18px;margin-bottom:14px;display:flex;align-items:center}
+.notif-lbl{flex:1;font-size:13px;font-weight:600;color:#2a2b3e}
+.notif-val{font-size:12px;color:#888;margin-right:10px;font-weight:600}
+.toggle-track{width:44px;height:24px;background:#e0e0ef;border-radius:12px;position:relative;transition:background .2s;display:inline-block;cursor:pointer}
+.toggle-track.on{background:#6c5ce7}
+.toggle-thumb{position:absolute;top:3px;left:3px;width:18px;height:18px;background:#fff;border-radius:50%;box-shadow:0 2px 5px rgba(0,0,0,.18);transition:left .2s}
+.toggle-track.on .toggle-thumb{left:23px}
+.notif-empty{background:#fff;border:1.5px solid #e8e9f4;border-radius:12px;padding:48px 20px;text-align:center}
+.ne-icon{width:58px;height:58px;background:#f5f5fc;border:2px solid #e8e9f4;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 14px}
+.ne-title{font-size:14px;font-weight:700;color:#f59e0b;margin-bottom:5px}
+.ne-sub{font-size:11px;color:#a0a0b8;line-height:1.6}
+
+/* ═══════════════════════════════════════════════════════════
+   STATUS BAR
+══════════════════════════════════════════════════════════ */
+.status-bar{background:#fff;border-top:1px solid #e8e9f4;padding:10px 18px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.sb-run{display:flex;align-items:center;min-width:90px}
+.st-dot{width:8px;height:8px;border-radius:50%;background:#ef4444;margin-right:8px;flex-shrink:0;transition:background .2s}
+.st-dot.running{background:#22c55e;animation:pulse 1s ease-in-out infinite}
+.st-label{font-size:11px;font-weight:800;letter-spacing:1.5px;color:#ef4444}
+.st-label.running{color:#22c55e}
+.sb-center{display:flex;align-items:center;justify-content:center;flex:1}
+.stop-lbl{font-size:12px;color:#555566;margin-right:7px;font-weight:500}
+.hk-key{display:inline-block;padding:3px 10px;background:#fff;border:1.5px solid #d8d8e8;border-radius:6px;font-size:11px;font-weight:700;color:#333344;letter-spacing:.4px;box-shadow:0 2px 4px rgba(0,0,0,.07);margin:0 3px}
+.session-sep{color:#d0d0e0;margin:0 12px;font-size:16px}
+.session-txt{font-size:12px;color:#888898}
+.session-txt b{color:#6c5ce7;font-weight:800}
+.st-btns{display:flex;flex-shrink:0;min-width:130px;justify-content:flex-end}
+.st-btns>.xbtn+.xbtn{margin-left:6px}
+.xbtn{padding:8px 18px;border:none;border-radius:9px;font-size:12px;font-weight:700;cursor:pointer;transition:opacity .15s,transform .1s;letter-spacing:.3px}
+.xbtn:disabled{opacity:.22;cursor:not-allowed}
+.xbtn:active:not([disabled]){transform:scale(.97)}
+.xbtn-s{background:#22c55e;color:#fff;box-shadow:0 3px 10px rgba(34,197,94,.3)}
+.xbtn-x{background:#ef4444;color:#fff;box-shadow:0 3px 10px rgba(239,68,68,.25)}
+
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.2;transform:scale(1.9)}}
+
+/* ═══════════════════════════════════════════════════════════
+   HOTKEY LISTEN OVERLAY
+══════════════════════════════════════════════════════════ */
+#hkListen{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9999;align-items:center;justify-content:center}
+#hkListen.open{display:flex}
+.hk-box{background:#13102a;border:1px solid rgba(108,71,255,.4);border-radius:16px;padding:36px 48px;text-align:center;min-width:280px;box-shadow:0 24px 60px rgba(0,0,0,.7)}
+.hk-title{font-size:17px;font-weight:700;color:#fff;margin-bottom:6px}
+.hk-hint{font-size:12px;color:rgba(255,255,255,.35);margin-bottom:24px}
+.hk-preview{font-size:26px;font-weight:900;color:#a78bfa;letter-spacing:1px;min-height:36px;background:rgba(108,71,255,.1);border:1px solid rgba(108,71,255,.25);border-radius:10px;padding:10px 20px;display:inline-block}
+.hk-cancel{margin-top:20px;font-size:11px;color:rgba(255,255,255,.25)}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ AUTH OVERLAY ═══════════════ -->
+<div class="auth-wrap" id="authWrap">
+  <div class="auth-orb ao1"></div>
+  <div class="auth-orb ao2"></div>
+  <div class="auth-orb ao3"></div>
+  <div class="auth-logo">
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+      <path d="M4 3.5L10.5 20.5L13.5 13.5L20.5 10.5L4 3.5Z" fill="white" stroke="white" stroke-width="1.2" stroke-linejoin="round"/>
+    </svg>
+  </div>
+  <div class="auth-brand">AutoClicker</div>
+  <div class="auth-brand-sub">Game-Ready Automation</div>
+
+  <div class="steps-bar" id="stepsBar" style="display:none">
+    <div class="sdot active" id="sd1">1</div><div class="sline" id="sl1"></div>
+    <div class="sdot" id="sd2">2</div><div class="sline" id="sl2"></div>
+    <div class="sdot" id="sd3">3</div>
+  </div>
+
+  <!-- Welcome card -->
+  <div class="auth-card" id="welcomeCard">
+    <div style="text-align:center;margin-bottom:20px">
+      <div style="font-size:15px;font-weight:800;color:#f1f5f9;margin-bottom:4px">Welcome</div>
+      <div style="font-size:11px;color:#334155">New user or returning customer?</div>
+    </div>
+    <div class="choice-row">
+      <div class="ccard" onclick="goCreateAccount()">
+        <div class="ccard-ico">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="1.8" stroke-linecap="round">
+            <path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/>
+            <line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/>
+          </svg>
+        </div>
+        <div class="ccard-name">New User</div>
+        <div class="ccard-sub">Create account &amp; activate your key</div>
+      </div>
+      <div class="ccard" onclick="goLogin()">
+        <div class="ccard-ico">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="1.8" stroke-linecap="round">
+            <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
+          </svg>
+        </div>
+        <div class="ccard-name">Login</div>
+        <div class="ccard-sub">Already have a key? Enter it here</div>
+        <div id="quickLoginWrap" onclick="event.stopPropagation()">
+          <div class="quick-div"></div>
+          <button class="quick-btn" onclick="doQuickLogin()">⚡ Quick Login</button>
+          <div id="quickDays"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Steps card -->
+  <div class="auth-card" id="stepsCard" style="display:none">
+    <!-- Step 1: Email -->
+    <div class="ascreen show" id="s1">
+      <div class="auth-title">Enter your email</div>
+      <div class="auth-sub">We'll send a 6-digit code to verify your address.</div>
+      <label class="albl">Email address</label>
+      <input id="emailInp" class="ainp" type="email" placeholder="you@example.com" onkeydown="if(event.keyCode===13)doSendCode()">
+      <button id="sendBtn" class="abtn" onclick="doSendCode()">Send Verification Code</button>
+      <div class="aerr" id="s1Err"></div>
+      <div class="alink"><b onclick="goBack()">← Back</b></div>
+    </div>
+    <!-- Step 2: Code -->
+    <div class="ascreen" id="s2">
+      <div class="auth-title">Check your inbox</div>
+      <div class="auth-sub">Enter the 6-digit code sent to <b id="emailLbl"></b></div>
+      <div class="code-row">
+        <input class="cbox" id="c0" maxlength="1" oninput="ci(0)" onkeydown="ck(event,0)">
+        <input class="cbox" id="c1" maxlength="1" oninput="ci(1)" onkeydown="ck(event,1)">
+        <input class="cbox" id="c2" maxlength="1" oninput="ci(2)" onkeydown="ck(event,2)">
+        <input class="cbox" id="c3" maxlength="1" oninput="ci(3)" onkeydown="ck(event,3)">
+        <input class="cbox" id="c4" maxlength="1" oninput="ci(4)" onkeydown="ck(event,4)">
+        <input class="cbox" id="c5" maxlength="1" oninput="ci(5)" onkeydown="ck(event,5)">
+      </div>
+      <button id="verifyBtn" class="abtn" onclick="doVerify()">Verify Code</button>
+      <div class="aerr" id="s2Err"></div>
+      <div class="alink">Didn't get it? <b onclick="doResend()">Resend</b></div>
+    </div>
+    <!-- Step 3: Key -->
+    <div class="ascreen" id="s3">
+      <div class="auth-title">Enter your license key</div>
+      <div class="auth-sub">Paste the key from your purchase email.</div>
+      <label class="albl">License key</label>
+      <input id="licInp" class="ainp key-inp" type="text" placeholder="AC-XXXXX-XXXXX-XXXXX" onkeydown="if(event.keyCode===13)doActivate()" oninput="this.value=this.value.toUpperCase()">
+      <button id="licBtn" class="abtn" onclick="doActivate()">Activate</button>
+      <div class="aerr" id="s3Err"></div>
+      <div class="alink" style="display:flex;justify-content:space-between">
+        <b onclick="goBack()">← Back</b>
+        <span>Need a key? <b onclick="openWebsite()">Buy one</b></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ MAIN APP ═══════════════ -->
+<div class="app" id="mainApp">
+
+  <!-- Minimal titlebar -->
+  <div class="titlebar">
+    <div class="tb-logo">
+      <div class="tb-icon">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none"><path d="M4 3.5L10.5 20.5L13.5 13.5L20.5 10.5L4 3.5Z" fill="white"/></svg>
+      </div>
+      AutoClicker
+    </div>
+    <!-- Mac controls -->
+    <div class="tb-mac-controls" id="macControls">
+      <button class="tb-mac-btn tb-mac-close" onclick="api.close()" title="Close"></button>
+      <button class="tb-mac-btn tb-mac-min"   onclick="api.minimize()" title="Minimize"></button>
+      <button class="tb-mac-btn tb-mac-max"   onclick="api.maximize()" title="Maximize"></button>
+    </div>
+    <!-- Windows controls -->
+    <div class="tb-win-controls" id="winControls" style="display:none">
+      <button class="tb-win-btn" onclick="api.minimize()" title="Minimize">&#9135;</button>
+      <button class="tb-win-btn" onclick="api.maximize()" title="Maximize">&#9744;</button>
+      <button class="tb-win-btn close" onclick="api.close()" title="Close">&#10005;</button>
+    </div>
+  </div>
+
+  <div class="app-body">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sb-logo">
+        <div class="sb-ico">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path d="M4 3.5L10.5 20.5L13.5 13.5L20.5 10.5L4 3.5Z" fill="white" stroke="white" stroke-width="1.2" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div>
+          <div class="sb-title">AutoClicker</div>
+          <div class="sb-ver">v2.0</div>
+        </div>
+      </div>
+
+      <nav class="sb-nav">
+        <button class="nav-item active" id="nb-home" onclick="showPage('home')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          Home
+        </button>
+        <button class="nav-item" id="nb-presets" onclick="showPage('presets')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+          Presets
+        </button>
+        <button class="nav-item" id="nb-notifications" onclick="showPage('notifications')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+          Notifications
+        </button>
+        <button class="nav-item" id="nb-settings" onclick="showPage('settings')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+          Settings
+        </button>
+        <button class="nav-item" onclick="openWebsite()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+          Feedback
+        </button>
+      </nav>
+
+      <div class="sb-bottom">
+        <div class="sb-user">
+          <div class="sb-av" id="sbAv">A</div>
+          <div>
+            <div class="sb-em" id="sbEmail">autoclicker</div>
+            <div class="sb-dy" id="sbDy">Active</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- CONTENT -->
+    <main class="content">
+
+      <!-- Page Header -->
+      <div class="page-hdr">
+        <div class="ph-icon" id="phIcon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" fill="white" fill-opacity=".9"/><polyline points="9 22 9 12 15 12 15 22" stroke="white" stroke-width="1.5" fill="none"/></svg>
+        </div>
+        <div>
+          <div class="ph-title" id="phTitle">Home</div>
+          <div class="ph-sub" id="phSub">Select your automation mode to get started</div>
+        </div>
+      </div>
+
+      <!-- Pages -->
+      <div class="scroll-area">
+
+        <!-- HOME -->
+        <div class="page active" id="pg-home">
+          <div class="home-grid">
+            <div class="home-card" id="mc-single" onclick="activateCard('single')">
+              <div class="hc-icon">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none"><path d="M5 3L19 12L13.5 13.5L11.5 19.5L5 3Z" fill="white" stroke="white" stroke-width="1.2" stroke-linejoin="round"/></svg>
+              </div>
+              <div class="hc-name">Single Target Clicking</div>
+            </div>
+            <div class="home-card" id="mc-multi" onclick="activateCard('multi')">
+              <div class="hc-icon">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none">
+                  <path d="M8 3L20 10.5L16 12L14.5 16.5L8 3Z" fill="white" stroke="white" stroke-width="1.1" stroke-linejoin="round"/>
+                  <path d="M3 6L13 12L9.5 13L8 17L3 6Z" fill="rgba(255,255,255,.55)" stroke="rgba(255,255,255,.8)" stroke-width="1" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <div class="hc-name">Multi Target Clicking</div>
+            </div>
+            <div class="home-card" id="mc-macro" onclick="activateCard('macro')">
+              <div class="hc-icon">
+                <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+              </div>
+              <div class="hc-name">Macro Recorder</div>
+            </div>
+            <div class="home-card" id="mc-scroll" onclick="activateCard('scroll')">
+              <div class="hc-icon">
+                <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 9 12 2 19 9"/><polyline points="5 15 12 22 19 15"/></svg>
+              </div>
+              <div class="hc-name">Auto Scroll</div>
+            </div>
+          </div>
+
+          <!-- Scroll sub-panel (shown when Auto Scroll selected from home) -->
+          <div id="homeScrollPanel" style="display:none;margin-top:14px">
+            <div class="card">
+              <div class="card-title">Scroll Direction</div>
+              <div class="scroll-dir">
+                <button class="sd-btn on" id="sd-up" onclick="setScrollDir('up')">↑ Scroll Up</button>
+                <button class="sd-btn" id="sd-down" onclick="setScrollDir('down')">↓ Scroll Down</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SINGLE TARGET -->
+        <div class="page" id="pg-single">
+          <div class="card">
+            <div class="fc-section">Click Type</div>
+            <div class="ct-row">
+              <button class="ct-btn on" id="st-left"  onclick="setSingleType('left')">▶ Left Click</button>
+              <button class="ct-btn"     id="st-right" onclick="setSingleType('right')">▷ Right Click</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="fc-section">Target Position</div>
+            <div class="target-grid">
+              <button class="tgt-btn" id="st-pinxy" onclick="doPinXY()">
+                <div class="tb-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6c5ce7" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="7"/><line x1="12" y1="5" x2="12" y2="2"/><line x1="12" y1="22" x2="12" y2="19"/><line x1="5" y1="12" x2="2" y2="12"/><line x1="22" y1="12" x2="19" y2="12"/><circle cx="12" cy="12" r="2.5" fill="#6c5ce7"/></svg></div>
+                <div class="tb-name">Pin XY</div>
+              </button>
+              <button class="tgt-btn" onclick="clearAllTarget()">
+                <div class="tb-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6c5ce7" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/></svg></div>
+                <div class="tb-name">Clear</div>
+              </button>
+            </div>
+            <div class="preview-panel" id="stPreviewPanel">
+              <div class="tinfo" id="stInfo">No target set — click Pin XY and click anywhere on screen</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="fc-section">Click Speed</div>
+            <div class="fc-speed-row">
+              <label class="fc-speed-lbl">Interval (ms)</label>
+              <input id="stIntInp" class="fc-speed-inp" type="number" value="100" min="10" max="60000" onchange="setSharedInterval(+this.value||100)">
+            </div>
+            <div class="fc-speed-row">
+              <label class="fc-speed-lbl">Limit (0 = ∞)</label>
+              <input id="stLimInp" class="fc-speed-inp" type="number" value="0" min="0" onchange="setSharedLimit(+this.value||0)">
+            </div>
+          </div>
+        </div>
+
+        <!-- MULTI TARGET -->
+        <div class="page" id="pg-multi">
+          <div class="info-banner">
+            AutoClicker cycles through all targets in order, left-clicking each one. Add up to <b>20 targets</b> by clicking "+ Add Target" then clicking anywhere on your screen.
+          </div>
+          <div class="card">
+            <div class="fc-hdr">
+              <span class="fc-title-lg">Click Targets</span>
+              <button class="add-tgt-btn" id="addTgtBtn" onclick="addMultiTarget()">+ Add Target</button>
+            </div>
+            <div id="multiTargetsList">
+              <div class="multi-empty">No targets yet — click <b>+ Add Target</b> above<br>then click anywhere on your screen</div>
+            </div>
+            <div id="multiClearRow" style="display:none;margin-top:8px;text-align:right">
+              <button style="padding:6px 14px;background:rgba(239,68,68,.08);color:#ef4444;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer" onclick="clearMultiTargets()">Clear All</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="fc-section">Click Speed</div>
+            <div class="fc-speed-row">
+              <label class="fc-speed-lbl">Interval (ms)</label>
+              <input id="mtIntInp" class="fc-speed-inp" type="number" value="100" min="10" max="60000" onchange="setSharedInterval(+this.value||100)">
+            </div>
+            <div class="fc-speed-row">
+              <label class="fc-speed-lbl">Limit (0 = ∞)</label>
+              <input id="mtLimInp" class="fc-speed-inp" type="number" value="0" min="0" onchange="setSharedLimit(+this.value||0)">
+            </div>
+          </div>
+        </div>
+
+        <!-- MACRO RECORDER -->
+        <div class="page" id="pg-macro">
+          <div class="macro-hero">
+            <button class="rec-btn idle" id="recBtn" onclick="toggleRecording()">
+              <div class="rec-dot" id="recDot"></div>
+            </button>
+            <div class="rec-status" id="recStatus">Ready to Record</div>
+            <div style="margin-top:12px">
+              <div class="rec-count" id="recCount">0</div>
+              <div class="rec-count-lbl">events recorded</div>
+            </div>
+          </div>
+          <div class="macro-actions">
+            <button class="mac-btn primary" id="macPlayBtn" onclick="togglePlay()" disabled>▶ Play</button>
+            <button class="mac-btn" id="macLoopBtn" onclick="toggleLoop()" disabled>↺ Loop: Off</button>
+            <button class="mac-btn danger" id="macClearBtn" onclick="clearMacro()" disabled>✕ Clear</button>
+          </div>
+          <div class="events-card">
+            <div class="events-hdr">
+              <span class="events-title">Recorded Events</span>
+              <span class="events-badge" id="evBadge">0 events</span>
+            </div>
+            <div class="events-list" id="eventsList">
+              <div class="events-empty">No events yet — press Record and start clicking</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PRESETS -->
+        <div class="page" id="pg-presets">
+          <div class="preset-save-form">
+            <div class="psf-title">Save Current Settings as Preset</div>
+            <div class="psf-row">
+              <input class="psf-inp" id="presetNameInp" type="text" placeholder="e.g. Fast Left Click, Game Macro...">
+              <button class="psf-btn" onclick="savePreset()">Save</button>
+            </div>
+          </div>
+          <div class="filter-bar">
+            <button class="ftab on"  id="ft-all"    onclick="filterPresets('all')">All</button>
+            <button class="ftab"     id="ft-left"   onclick="filterPresets('left')">Left Click</button>
+            <button class="ftab"     id="ft-right"  onclick="filterPresets('right')">Right Click</button>
+            <button class="ftab"     id="ft-key"    onclick="filterPresets('key')">Key Spam</button>
+            <button class="ftab"     id="ft-scroll" onclick="filterPresets('scroll')">Auto Scroll</button>
+          </div>
+          <div id="presetsList"></div>
+        </div>
+
+        <!-- NOTIFICATIONS -->
+        <div class="page" id="pg-notifications">
+          <div class="notif-row">
+            <span class="notif-lbl">Notification sound</span>
+            <span class="notif-val" id="notifVal">On</span>
+            <div class="toggle-track on" id="notifTrack" onclick="toggleNotifSound()">
+              <div class="toggle-thumb"></div>
+            </div>
+          </div>
+          <div class="notif-empty">
+            <div class="ne-icon">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#c0c0d8" stroke-width="1.8" stroke-linecap="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+            </div>
+            <div class="ne-title">No notifications right now.</div>
+            <div class="ne-sub">Check back later for updates and alerts.</div>
+          </div>
+        </div>
+
+        <!-- SETTINGS -->
+        <div class="page" id="pg-settings">
+          <div class="settings-card">
+            <div class="sc-title">Click Speed</div>
+            <div class="srow">
+              <label class="srow-lbl">Interval (ms)</label>
+              <input id="intInp" class="sinp" type="number" value="100" min="10" max="60000" onchange="setSharedInterval(+this.value||100)">
+            </div>
+            <div class="srow">
+              <label class="srow-lbl">Limit (0 = ∞)</label>
+              <input id="limInp" class="sinp" type="number" value="0" min="0" onchange="setSharedLimit(+this.value||0)">
+            </div>
+          </div>
+          <div class="settings-card">
+            <div class="sc-title">Hotkey</div>
+            <div class="srow">
+              <label class="srow-lbl">Toggle key</label>
+              <span class="hotkey-badge" id="settingsHkBadge" onclick="startHotkeyBind()">F6</span>
+            </div>
+            <div class="srow">
+              <label class="srow-lbl">Platform</label>
+              <span style="font-size:12px;color:#8888a0" id="platformTxt">—</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ACCOUNT -->
+        <div class="page" id="pg-account">
+          <div class="acct-hero">
+            <div class="acct-av" id="acctAv">A</div>
+            <div class="acct-em" id="acctEm">user@example.com</div>
+            <div class="acct-badge" id="acctBadge">Active License</div>
+          </div>
+          <div class="acct-row">
+            <span class="arl">Status</span>
+            <span class="arv" style="color:#22c55e">● Active</span>
+          </div>
+          <div class="acct-row">
+            <span class="arl">Days remaining</span>
+            <span class="arv" style="color:#6c5ce7" id="acctDays">--</span>
+          </div>
+          <div class="acct-row">
+            <span class="arl">Machine locked</span>
+            <span class="arv">This PC only</span>
+          </div>
+          <div class="acct-row clickable" onclick="startHotkeyBind()">
+            <span class="arl">Toggle hotkey <span style="font-size:10px;color:rgba(0,0,0,.25)">(click to change)</span></span>
+            <span class="hotkey-badge" id="hkBadge">F6</span>
+          </div>
+          <div class="acct-row clickable" onclick="openWebsite()">
+            <span class="arl">Renew / Upgrade</span>
+            <span class="arv" style="color:#6c5ce7">→ Open website</span>
+          </div>
+        </div>
+
+      </div><!-- /scroll-area -->
+
+      <!-- STATUS BAR -->
+      <div class="status-bar">
+        <div class="sb-run">
+          <div class="st-dot" id="stDot"></div>
+          <div class="st-label" id="stLabel">STOPPED</div>
+        </div>
+        <div class="sb-center">
+          <span class="stop-lbl">Toggle:</span>
+          <span class="hk-key" id="hkDisplay">F6</span>
+          <span class="session-sep">⁞</span>
+          <span class="session-txt">This session: <b id="stNum">0</b> clicks</span>
+        </div>
+        <div class="st-btns">
+          <button id="btnStart" class="xbtn xbtn-s" onclick="doStart()">▶ START</button>
+          <button id="btnStop"  class="xbtn xbtn-x" onclick="doStop()" disabled>■ STOP</button>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- HOTKEY LISTEN OVERLAY -->
+<div id="hkListen">
+  <div class="hk-box">
+    <div class="hk-title">Press any key</div>
+    <div class="hk-hint">You can use Ctrl, Shift, or Alt combinations</div>
+    <div class="hk-preview" id="hkPreview">—</div>
+    <div class="hk-cancel">Press Esc to cancel</div>
+  </div>
+</div>
+
+<script>
+const api = window.electronAPI;
+var vEmail = ''; var currentMode = 'left'; var currentInterval = 100; var currentLimit = 0;
+var allPresets = []; var activeFilter = 'all';
+var macroIsRecording = false; var macroIsPlaying = false; var macroLoop = false;
+var macroEvents = []; var hkListening = false; var keyFocused = false;
+var notifSoundOn = true;
+
+/* ════════════════════════════════════════
+   INIT
+════════════════════════════════════════ */
+async function init() {
+  // Platform titlebar
+  const platform = api.platform();
+  if (platform === 'darwin') {
+    document.getElementById('macControls').style.display = 'flex';
+  } else {
+    document.getElementById('winControls').style.display = 'flex';
+  }
+  document.getElementById('platformTxt').textContent = platform === 'darwin' ? 'macOS' : 'Windows';
+
+  // Event listeners from main
+  api.onStatusChange(({ running, clicks }) => {
+    setRunning(running);
+    if (clicks !== undefined) document.getElementById('stNum').textContent = clicks;
+  });
+  api.onClickTick(({ clicks }) => {
+    document.getElementById('stNum').textContent = clicks;
+  });
+  api.onTargetPicked(({ x, y, forMulti, targets }) => {
+    if (forMulti) {
+      multiTargetsLoaded(targets || []);
+    } else {
+      setTargetInfo('Fixed XY: (' + x + ', ' + y + ')', 'set');
+    }
+  });
+  api.onMacroEvent((ev) => {
+    macroEvents.push(ev);
+    refreshMacroUI();
+  });
+  api.onMacroPlayState(({ recording, playing, count }) => {
+    if (recording === false) macroRecordState(false);
+    if (playing !== undefined) {
+      macroIsPlaying = playing;
+      var btn = document.getElementById('macPlayBtn');
+      btn.innerHTML = playing ? '■ Stop' : '▶ Play';
+      btn.className = 'mac-btn' + (playing ? ' danger' : ' primary');
+    }
+  });
+
+  // Check existing license
+  const lic = await api.getLicense();
+  if (lic && lic.key) {
+    const days = lic.expiresAt
+      ? Math.max(0, Math.ceil((new Date(lic.expiresAt) - Date.now()) / 86400000))
+      : 0;
+    if (days > 0 || !lic.expiresAt) {
+      // Show quick login option
+      const qw = document.getElementById('quickLoginWrap');
+      const qd = document.getElementById('quickDays');
+      if (qw) qw.style.display = 'block';
+      if (qd) qd.textContent = days ? days + ' days remaining' : 'Active';
+      vEmail = lic.email || '';
+      unlockApp(days, lic.email);
+      return;
+    }
+  }
+  // Stay on auth screen
+}
+
+/* ════════════════════════════════════════
+   AUTH FLOW
+════════════════════════════════════════ */
+function goCreateAccount() {
+  document.getElementById('welcomeCard').style.display = 'none';
+  document.getElementById('stepsCard').style.display = 'block';
+  document.getElementById('stepsBar').style.display = 'flex';
+  showStep(1);
+}
+function goLogin() {
+  document.getElementById('welcomeCard').style.display = 'none';
+  document.getElementById('stepsCard').style.display = 'block';
+  document.getElementById('stepsBar').style.display = 'none';
+  for (var i = 1; i <= 3; i++) {
+    var s = document.getElementById('s' + i);
+    if (s) s.className = 'ascreen' + (i === 3 ? ' show' : '');
+  }
+}
+function goBack() {
+  document.getElementById('stepsCard').style.display = 'none';
+  document.getElementById('stepsBar').style.display = 'none';
+  document.getElementById('welcomeCard').style.display = 'block';
+  for (var i = 1; i <= 3; i++) {
+    var s = document.getElementById('s' + i);
+    if (s) s.className = 'ascreen' + (i === 1 ? ' show' : '');
+  }
+  document.getElementById('s1Err').textContent = '';
+  document.getElementById('s3Err').textContent = '';
+}
+function showStep(n) {
+  for (var i = 1; i <= 3; i++) {
+    var sc = document.getElementById('s' + i); if (sc) sc.className = 'ascreen' + (i === n ? ' show' : '');
+    var sd = document.getElementById('sd' + i); if (!sd) continue;
+    if (i < n) sd.className = 'sdot done'; else if (i === n) sd.className = 'sdot active'; else sd.className = 'sdot';
+    if (i < 3) { var sl = document.getElementById('sl' + i); if (sl) sl.className = 'sline' + (i < n ? ' done' : ''); }
+  }
+}
+async function doSendCode() {
+  var e = document.getElementById('emailInp').value.trim();
+  if (!e || e.indexOf('@') < 0) { document.getElementById('s1Err').textContent = 'Enter a valid email'; return; }
+  document.getElementById('s1Err').textContent = '';
+  var b = document.getElementById('sendBtn'); b.disabled = true; b.textContent = 'Sending...';
+  const result = await api.sendCode(e);
+  b.disabled = false; b.textContent = 'Send Verification Code';
+  if (result && result.sent) {
+    vEmail = e; document.getElementById('emailLbl').textContent = vEmail;
+    showStep(2); document.getElementById('c0').focus();
+  } else {
+    document.getElementById('s1Err').textContent = (result && result.error) || 'Could not send code';
+  }
+}
+function ci(i) { var v = document.getElementById('c' + i).value.replace(/[^0-9]/g, ''); document.getElementById('c' + i).value = v; if (v && i < 5) document.getElementById('c' + (i + 1)).focus(); if (i === 5 && v) doVerify(); }
+function ck(e, i) { if (e.keyCode === 8 && !document.getElementById('c' + i).value && i > 0) document.getElementById('c' + (i - 1)).focus(); }
+function getCode() { var c = ''; for (var i = 0; i < 6; i++) c += document.getElementById('c' + i).value; return c; }
+async function doVerify() {
+  var code = getCode(); if (code.length < 6) { document.getElementById('s2Err').textContent = 'Enter all 6 digits'; return; }
+  document.getElementById('s2Err').textContent = '';
+  var b = document.getElementById('verifyBtn'); b.disabled = true; b.textContent = 'Verifying...';
+  const result = await api.verifyCode(vEmail, code);
+  b.disabled = false; b.textContent = 'Verify Code';
+  if (result && result.valid) showStep(3);
+  else document.getElementById('s2Err').textContent = (result && result.error) || 'Invalid code';
+}
+async function doResend() { for (var i = 0; i < 6; i++) document.getElementById('c' + i).value = ''; document.getElementById('s2Err').textContent = 'Sending...'; await api.sendCode(vEmail); document.getElementById('s2Err').textContent = ''; }
+async function doActivate() {
+  var k = document.getElementById('licInp').value.trim(); if (!k) { document.getElementById('s3Err').textContent = 'Enter your license key'; return; }
+  document.getElementById('s3Err').textContent = '';
+  var b = document.getElementById('licBtn'); b.disabled = true; b.textContent = 'Activating...';
+  const result = await api.checkLicense(k);
+  b.disabled = false; b.textContent = 'Activate';
+  if (!result) { document.getElementById('s3Err').textContent = 'Could not reach license server. Check your connection.'; return; }
+  if (result.valid) {
+    await api.saveLicense({ key: k, expiresAt: result.expiresAt, email: vEmail });
+    const days = result.daysLeft || (result.expiresAt ? Math.ceil((new Date(result.expiresAt) - Date.now()) / 86400000) : 30);
+    unlockApp(days, vEmail);
+  } else {
+    document.getElementById('s3Err').textContent = result.reason || 'Invalid key';
+  }
+}
+async function doQuickLogin() {
+  var b = document.getElementsByClassName('quick-btn')[0]; b.textContent = 'Logging in...'; b.disabled = true;
+  const lic = await api.getLicense();
+  if (lic && lic.key) {
+    const days = lic.expiresAt ? Math.max(0, Math.ceil((new Date(lic.expiresAt) - Date.now()) / 86400000)) : 30;
+    vEmail = lic.email || '';
+    unlockApp(days, lic.email);
+  } else {
+    b.textContent = '⚡ Quick Login'; b.disabled = false;
+  }
+}
+function unlockApp(days, email) {
+  document.getElementById('authWrap').style.display = 'none';
+  var ma = document.getElementById('mainApp'); ma.className = 'app show';
+  var em = email || vEmail || ''; var ini = (em.charAt(0) || 'A').toUpperCase();
+  document.getElementById('sbAv').textContent = ini;
+  document.getElementById('sbEmail').textContent = em || 'autoclicker';
+  document.getElementById('sbDy').textContent = days ? days + 'd remaining' : 'Active';
+  document.getElementById('acctAv').textContent = ini;
+  document.getElementById('acctEm').textContent = em || '--';
+  document.getElementById('acctDays').textContent = days ? days + ' days' : 'Lifetime';
+  document.getElementById('acctBadge').textContent = days ? days + ' days left' : 'Active License';
+
+  // Load settings after unlock
+  loadSettings();
+}
+function openWebsite() { api.openURL('https://autoclicker-pi.vercel.app'); }
+
+/* ════════════════════════════════════════
+   LOAD SETTINGS
+════════════════════════════════════════ */
+async function loadSettings() {
+  const s = await api.getSettings();
+  if (s.interval) setSharedInterval(s.interval, true);
+  if (s.limit !== undefined) setSharedLimit(s.limit, true);
+  if (s.hotkey) updateHotkeyDisplay(s.hotkey);
+  if (s.mode) {
+    currentMode = s.mode;
+  }
+  if (s.spamKeyName) document.getElementById('keyInp') && (document.getElementById('keyInp').value = s.spamKeyName);
+  if (s.multiTargets && s.multiTargets.length) multiTargetsLoaded(s.multiTargets);
+  const presets = await api.getPresets();
+  presetsLoaded(presets);
+}
+
+/* ════════════════════════════════════════
+   PAGE NAVIGATION
+════════════════════════════════════════ */
+var pageHeaders = {
+  home:          { title: 'Home',                   sub: 'Select your automation mode to get started' },
+  single:        { title: 'Single Target Clicking', sub: 'Click at a fixed position automatically' },
+  multi:         { title: 'Multi Target Clicking',  sub: 'Cycle through multiple targets in sequence' },
+  macro:         { title: 'Macro Recorder',         sub: 'Record mouse clicks and replay them automatically' },
+  presets:       { title: 'Presets',                sub: 'Save and manage your automation presets' },
+  notifications: { title: 'Notifications',          sub: 'Updates, alerts, and messages' },
+  settings:      { title: 'Settings',               sub: 'Configure click speed and hotkey' },
+  account:       { title: 'Account',                sub: 'Your license details and subscription info' },
+};
+var pageIcons = {
+  home:    '<path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" fill="white" fill-opacity=".9"/><polyline points="9 22 9 12 15 12 15 22" stroke="white" stroke-width="1.5" fill="none"/>',
+  single:  '<path d="M5 3L19 12L13.5 13.5L11.5 19.5L5 3Z" fill="white" stroke="white" stroke-width="1.2" stroke-linejoin="round"/>',
+  multi:   '<path d="M8 3L20 10.5L16 12L14.5 16.5L8 3Z" fill="white" stroke="white" stroke-width="1.1" stroke-linejoin="round"/><path d="M3 6L13 12L9.5 13L8 17L3 6Z" fill="rgba(255,255,255,.55)" stroke="rgba(255,255,255,.8)" stroke-width="1" stroke-linejoin="round"/>',
+  macro:   '<rect x="1" y="5" width="15" height="14" rx="2" fill="white" fill-opacity=".85"/><path d="M23 7l-7 5 7 5V7z" fill="white" fill-opacity=".7"/>',
+  presets: '<path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z" fill="white" fill-opacity=".9"/>',
+  notifications: '<path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" fill="white" fill-opacity=".85"/><path d="M13.73 21a2 2 0 01-3.46 0" stroke="white" stroke-width="2" stroke-linecap="round" fill="none"/>',
+  settings:'<circle cx="12" cy="12" r="3" stroke="white" stroke-width="1.8" fill="none"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" stroke="white" stroke-width="1.5" fill="none"/>',
+  account: '<path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" stroke="white" stroke-width="1.8" fill="none"/><circle cx="12" cy="7" r="4" stroke="white" stroke-width="1.8" fill="none"/>',
+};
+function showPage(p) {
+  var allPages = ['home','single','multi','macro','presets','notifications','settings','account'];
+  var navPages = ['home','presets','notifications','settings'];
+  allPages.forEach(function(pg) {
+    var el = document.getElementById('pg-' + pg); if (el) el.className = 'page' + (pg === p ? ' active' : '');
+  });
+  navPages.forEach(function(np) {
+    var el = document.getElementById('nb-' + np); if (el) el.className = 'nav-item' + (np === p ? ' active' : '');
+  });
+  if (p === 'single' || p === 'multi' || p === 'macro') {
+    var nb = document.getElementById('nb-home'); if (nb) nb.className = 'nav-item active';
+  }
+  if (p === 'presets') refreshPresets();
+  if (pageHeaders[p]) {
+    document.getElementById('phTitle').textContent = pageHeaders[p].title;
+    document.getElementById('phSub').textContent   = pageHeaders[p].sub;
+  }
+  if (pageIcons[p]) {
+    document.getElementById('phIcon').innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none">' + pageIcons[p] + '</svg>';
+  }
+}
+
+/* ════════════════════════════════════════
+   HOME CARD ACTIVATION
+════════════════════════════════════════ */
+function activateCard(m) {
+  ['single','multi','macro','scroll'].forEach(function(c) {
+    var el = document.getElementById('mc-' + c); if (el) el.className = 'home-card' + (c === m ? ' active' : '');
+  });
+  if (m === 'macro') { showPage('macro'); return; }
+  if (m === 'single') {
+    api.setMode('left'); currentMode = 'left';
+    document.getElementById('st-left').className = 'ct-btn on';
+    document.getElementById('st-right').className = 'ct-btn';
+    showPage('single'); return;
+  }
+  if (m === 'multi') {
+    api.setMode('multi'); currentMode = 'multi';
+    showPage('multi'); return;
+  }
+  if (m === 'scroll') {
+    api.setMode('scroll-up'); currentMode = 'scroll-up';
+    document.getElementById('homeScrollPanel').style.display = 'block';
+  }
+}
+
+/* ════════════════════════════════════════
+   SINGLE TARGET
+════════════════════════════════════════ */
+function setSingleType(t) {
+  document.getElementById('st-left').className  = 'ct-btn' + (t === 'left' ? ' on' : '');
+  document.getElementById('st-right').className = 'ct-btn' + (t === 'right' ? ' on' : '');
+  currentMode = t; api.setMode(t);
+}
+function doPinXY() { api.pickXY(); }
+function clearAllTarget() {
+  api.clearTarget();
+  document.getElementById('st-pinxy').className = 'tgt-btn';
+  setTargetInfo('No target set — click Pin XY and click anywhere on screen', '');
+}
+function setTargetInfo(text, cls) {
+  var pp = document.getElementById('stPreviewPanel'); if (pp) pp.className = 'preview-panel show';
+  var el = document.getElementById('stInfo'); if (el) { el.textContent = text; el.className = 'tinfo' + (cls ? ' ' + cls : ''); }
+  if (cls === 'set') {
+    var h = document.getElementById('st-pinxy'); if (h) h.className = 'tgt-btn active';
+  }
+}
+
+/* ════════════════════════════════════════
+   SCROLL DIRECTION
+════════════════════════════════════════ */
+function setScrollDir(d) {
+  document.getElementById('sd-up').className   = 'sd-btn' + (d === 'up'   ? ' on' : '');
+  document.getElementById('sd-down').className = 'sd-btn' + (d === 'down' ? ' on' : '');
+  api.setScrollDir(d);
+  currentMode = d === 'up' ? 'scroll-up' : 'scroll-down';
+}
+
+/* ════════════════════════════════════════
+   KEY SPAM (accessed via settings or future mode card)
+════════════════════════════════════════ */
+var keyFocused2 = false;
+function focusKey() { keyFocused2 = true; var b = document.getElementById('keyInp'); if (b) { b.value = 'Press any key...'; b.className = 'key-input waiting'; } }
+function blurKey()  { if (keyFocused2) { keyFocused2 = false; var b = document.getElementById('keyInp'); if (b && b.className === 'key-input waiting') { b.value = 'Click here then press any key'; b.className = 'key-input'; } } }
+function captureKey(e) {
+  if (!keyFocused2) return; e.preventDefault();
+  var vk = e.keyCode; var name = e.key || String.fromCharCode(e.keyCode);
+  var b = document.getElementById('keyInp'); b.value = 'Key: ' + name.toUpperCase();
+  b.className = 'key-input captured'; keyFocused2 = false; b.blur();
+  api.setKey(vk, name);
+}
+
+/* ════════════════════════════════════════
+   SPEED / LIMIT (shared across pages)
+════════════════════════════════════════ */
+function setSharedInterval(v, silent) {
+  currentInterval = v; if (!silent) api.setInterval(v);
+  else api.setInterval(v);
+  ['intInp','stIntInp','mtIntInp'].forEach(function(id) {
+    var e = document.getElementById(id); if (e && e !== document.activeElement) e.value = v;
+  });
+}
+function setSharedLimit(v, silent) {
+  currentLimit = v; api.setLimit(v);
+  ['limInp','stLimInp','mtLimInp'].forEach(function(id) {
+    var e = document.getElementById(id); if (e && e !== document.activeElement) e.value = v;
+  });
+}
+
+/* ════════════════════════════════════════
+   MULTI TARGETS
+════════════════════════════════════════ */
+var multiTargetsArr = [];
+function addMultiTarget() { if (multiTargetsArr.length >= 20) return; api.addMultiTarget(); }
+function clearMultiTargets() { api.clearMultiTargets(); multiTargetsArr = []; renderMultiTargets(); }
+function multiTargetsLoaded(arr) { multiTargetsArr = arr || []; renderMultiTargets(); }
+function renderMultiTargets() {
+  var el = document.getElementById('multiTargetsList'); if (!el) return;
+  var cr = document.getElementById('multiClearRow');
+  if (!multiTargetsArr.length) {
+    el.innerHTML = '<div class="multi-empty">No targets yet — click <b>+ Add Target</b> above<br>then click anywhere on your screen</div>';
+    if (cr) cr.style.display = 'none'; return;
+  }
+  if (cr) cr.style.display = 'block';
+  el.innerHTML = multiTargetsArr.map(function(t, i) {
+    return '<div class="multi-target-item"><div class="mti-num">' + (i+1) + '</div>' +
+      '<span class="mti-coords">X:&nbsp;<b>' + t.x + '</b>&nbsp;&nbsp;&nbsp;Y:&nbsp;<b>' + t.y + '</b></span>' +
+      '<button class="mti-del" onclick="removeMultiTarget(' + i + ')">×</button></div>';
+  }).join('');
+  var btn = document.getElementById('addTgtBtn');
+  if (btn) { btn.disabled = multiTargetsArr.length >= 20; btn.style.opacity = multiTargetsArr.length >= 20 ? '.4' : ''; }
+}
+async function removeMultiTarget(i) {
+  const targets = await api.removeMultiTarget(i);
+  multiTargetsLoaded(targets);
+}
+
+/* ════════════════════════════════════════
+   START / STOP
+════════════════════════════════════════ */
+function doStart() { api.start(); }
+function doStop()  { api.stop(); }
+function setRunning(on) {
+  var dot = document.getElementById('stDot'); var lbl = document.getElementById('stLabel');
+  dot.className  = 'st-dot' + (on ? ' running' : '');
+  lbl.className  = 'st-label' + (on ? ' running' : '');
+  lbl.textContent = on ? 'RUNNING' : 'STOPPED';
+  document.getElementById('btnStart').disabled = on;
+  document.getElementById('btnStop').disabled  = !on;
+  var inputs = ['intInp','stIntInp','mtIntInp','limInp','stLimInp','mtLimInp'];
+  inputs.forEach(function(id) { var e = document.getElementById(id); if (e) e.disabled = on; });
+  var atb = document.getElementById('addTgtBtn'); if (atb) atb.disabled = on;
+}
+
+/* ════════════════════════════════════════
+   HOTKEY BIND
+════════════════════════════════════════ */
+var VK_NAMES = {
+  0x08:'Backspace',0x09:'Tab',0x0D:'Enter',0x1B:'Esc',0x20:'Space',
+  0x21:'PgUp',0x22:'PgDn',0x23:'End',0x24:'Home',
+  0x25:'Left',0x26:'Up',0x27:'Right',0x28:'Down',
+  0x2D:'Insert',0x2E:'Delete',
+  0x30:'0',0x31:'1',0x32:'2',0x33:'3',0x34:'4',0x35:'5',0x36:'6',0x37:'7',0x38:'8',0x39:'9',
+  0x41:'A',0x42:'B',0x43:'C',0x44:'D',0x45:'E',0x46:'F',0x47:'G',0x48:'H',0x49:'I',
+  0x4A:'J',0x4B:'K',0x4C:'L',0x4D:'M',0x4E:'N',0x4F:'O',0x50:'P',0x51:'Q',0x52:'R',
+  0x53:'S',0x54:'T',0x55:'U',0x56:'V',0x57:'W',0x58:'X',0x59:'Y',0x5A:'Z',
+  0x60:'Num0',0x61:'Num1',0x62:'Num2',0x63:'Num3',0x64:'Num4',
+  0x65:'Num5',0x66:'Num6',0x67:'Num7',0x68:'Num8',0x69:'Num9',
+  0x70:'F1',0x71:'F2',0x72:'F3',0x73:'F4',0x74:'F5',0x75:'F6',
+  0x76:'F7',0x77:'F8',0x78:'F9',0x79:'F10',0x7A:'F11',0x7B:'F12',
+};
+function startHotkeyBind() {
+  hkListening = true;
+  document.getElementById('hkPreview').textContent = '—';
+  document.getElementById('hkListen').className = 'open';
+  document.addEventListener('keydown', captureHotkey, true);
+}
+function cancelHotkeyBind() {
+  hkListening = false;
+  document.getElementById('hkListen').className = '';
+  document.removeEventListener('keydown', captureHotkey, true);
+}
+function captureHotkey(e) {
+  e.preventDefault();
+  var vk = e.keyCode;
+  if ([16,17,18,91,92].includes(vk)) return;
+  if (vk === 27) { cancelHotkeyBind(); return; }
+  var parts = [];
+  if (e.ctrlKey || e.metaKey) parts.push(e.metaKey ? 'CommandOrControl' : 'Ctrl');
+  if (e.shiftKey) parts.push('Shift');
+  if (e.altKey)   parts.push('Alt');
+  var keyName = VK_NAMES[vk] || e.key || String.fromCharCode(vk);
+  parts.push(keyName);
+  var combo = parts.join('+');
+  document.getElementById('hkPreview').textContent = combo;
+  hkListening = false;
+  document.getElementById('hkListen').className = '';
+  document.removeEventListener('keydown', captureHotkey, true);
+  api.setHotkey(combo).then(function() { updateHotkeyDisplay(combo); });
+}
+function updateHotkeyDisplay(key) {
+  ['hkDisplay','hkBadge','settingsHkBadge'].forEach(function(id) {
+    var el = document.getElementById(id); if (el) el.textContent = key;
+  });
+}
+
+/* ════════════════════════════════════════
+   NOTIFICATIONS
+════════════════════════════════════════ */
+function toggleNotifSound() {
+  notifSoundOn = !notifSoundOn;
+  var track = document.getElementById('notifTrack'); var val = document.getElementById('notifVal');
+  track.className = 'toggle-track' + (notifSoundOn ? ' on' : '');
+  val.textContent = notifSoundOn ? 'On' : 'Off';
+}
+
+/* ════════════════════════════════════════
+   MACRO RECORDER
+════════════════════════════════════════ */
+async function toggleRecording() {
+  if (macroIsPlaying) return;
+  if (macroIsRecording) {
+    await api.stopRecording();
+    macroRecordState(false);
+  } else {
+    macroEvents = [];
+    refreshMacroUI();
+    await api.startRecording();
+    macroRecordState(true);
+  }
+}
+function macroRecordState(on) {
+  macroIsRecording = on;
+  var btn = document.getElementById('recBtn'); var st = document.getElementById('recStatus');
+  btn.className = 'rec-btn ' + (on ? 'recording' : 'idle');
+  st.className = 'rec-status' + (on ? ' recording' : '');
+  st.textContent = on ? 'Recording... Click anywhere to capture' : 'Ready to Record';
+}
+function refreshMacroUI() {
+  var cnt = macroEvents.length;
+  document.getElementById('recCount').textContent = cnt;
+  document.getElementById('evBadge').textContent = cnt + ' event' + (cnt === 1 ? '' : 's');
+  var hasEvents = cnt > 0;
+  document.getElementById('macPlayBtn').disabled  = !hasEvents || macroIsRecording;
+  document.getElementById('macLoopBtn').disabled  = !hasEvents;
+  document.getElementById('macClearBtn').disabled = !hasEvents;
+  var list = document.getElementById('eventsList');
+  if (!cnt) { list.innerHTML = '<div class="events-empty">No events yet — press Record and start clicking</div>'; return; }
+  var start = Math.max(0, cnt - 20); var html = '';
+  for (var i = start; i < cnt; i++) {
+    var ev = macroEvents[i];
+    html += '<div class="event-row"><span class="ev-idx">' + (i+1) + '</span>';
+    html += '<div class="ev-type' + (ev.t === 'R' ? ' right' : '') + '"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M5 3L19 12L13 14L11 20L5 3Z" fill="white"/></svg></div>';
+    html += '<span class="ev-pos">' + (ev.t === 'R' ? 'Right' : 'Left') + ' Click &nbsp;(' + ev.x + ', ' + ev.y + ')</span>';
+    html += '<span class="ev-delay">+' + ev.d + 'ms</span></div>';
+  }
+  list.innerHTML = html;
+  list.scrollTop = list.scrollHeight;
+}
+async function togglePlay() {
+  if (macroIsPlaying) {
+    await api.stopMacro(); macroIsPlaying = false;
+    document.getElementById('macPlayBtn').innerHTML = '▶ Play';
+    document.getElementById('macPlayBtn').className = 'mac-btn primary';
+  } else {
+    if (!macroEvents.length) return;
+    await api.playMacro(macroEvents);
+    macroIsPlaying = true;
+    document.getElementById('macPlayBtn').innerHTML = '■ Stop';
+    document.getElementById('macPlayBtn').className = 'mac-btn danger';
+  }
+}
+function toggleLoop() {
+  macroLoop = !macroLoop;
+  document.getElementById('macLoopBtn').textContent = '↺ Loop: ' + (macroLoop ? 'On' : 'Off');
+}
+async function clearMacro() {
+  if (macroIsRecording || macroIsPlaying) return;
+  macroEvents = []; refreshMacroUI();
+}
+
+/* ════════════════════════════════════════
+   PRESETS
+════════════════════════════════════════ */
+function presetsLoaded(arr) { allPresets = arr || []; renderPresets(); }
+function filterPresets(f) {
+  activeFilter = f;
+  ['all','left','right','key','scroll'].forEach(function(t) {
+    var el = document.getElementById('ft-' + t); if (el) el.className = 'ftab' + (t === f ? ' on' : '');
+  });
+  renderPresets();
+}
+function renderPresets() {
+  var list = allPresets.filter(function(p) { return activeFilter === 'all' || p.mode === activeFilter; });
+  var el = document.getElementById('presetsList'); if (!el) return;
+  if (!list.length) {
+    el.innerHTML = '<div class="preset-empty"><div class="pe-ico"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#c0c0d8" stroke-width="2" stroke-linecap="round"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg></div><div class="pe-title">No presets found</div><div class="pe-sub">Save your current settings above to create your first preset.</div></div>';
+    return;
+  }
+  var modeLabel = { left:'Left Click', right:'Right Click', key:'Key Spam', 'scroll-up':'Auto Scroll', 'scroll-down':'Auto Scroll', multi:'Multi Target' };
+  el.innerHTML = list.map(function(p) {
+    return '<div class="preset-item">' +
+      '<div class="pi-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z" fill="white" fill-opacity=".85"/></svg></div>' +
+      '<div class="pi-info"><div class="pi-name">' + esc(p.name) + '</div><div class="pi-meta">' + (modeLabel[p.mode] || p.mode) + ' • ' + p.interval + 'ms • Limit: ' + (p.limit || '∞') + '</div></div>' +
+      '<div class="pi-actions"><button class="pi-use" onclick="loadPreset(\'' + p.id + '\')">▶ Use</button><button class="pi-del" onclick="deletePreset(\'' + p.id + '\')">×</button></div>' +
+      '</div>';
+  }).join('');
+}
+async function savePreset() {
+  var name = document.getElementById('presetNameInp').value.trim();
+  if (!name) { document.getElementById('presetNameInp').style.borderColor = '#ef4444'; setTimeout(function() { document.getElementById('presetNameInp').style.borderColor = ''; }, 1500); return; }
+  var preset = { id: Date.now().toString(36), name: name, mode: currentMode, interval: currentInterval, limit: currentLimit };
+  const presets = await api.savePreset(preset);
+  presetsLoaded(presets);
+  document.getElementById('presetNameInp').value = '';
+}
+async function refreshPresets() {
+  const presets = await api.getPresets();
+  presetsLoaded(presets);
+}
+async function loadPreset(id) {
+  var p = allPresets.find(function(x) { return x.id === id; }); if (!p) return;
+  currentMode = p.mode; setSharedInterval(p.interval); setSharedLimit(p.limit);
+  api.setMode(p.mode);
+  if (p.mode === 'left' || p.mode === 'right') { activateCard('single'); setSingleType(p.mode); }
+  else if (p.mode === 'multi') { activateCard('multi'); }
+  else if (p.mode === 'scroll-up' || p.mode === 'scroll-down') { activateCard('scroll'); setScrollDir(p.mode === 'scroll-up' ? 'up' : 'down'); }
+  else showPage('home');
+}
+async function deletePreset(id) {
+  const presets = await api.deletePreset(id);
+  presetsLoaded(presets);
+}
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+/* ════════════════════════════════════════
+   BOOT
+════════════════════════════════════════ */
+init();
+</script>
+</body>
+</html>
